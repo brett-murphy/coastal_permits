@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="css/chosen.css">
+    <title>Coastal Permits along Florida's critically eroded beaches | Naples Daily News</title>
+    <style>
+    html,
+    body,
+    #map {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #dropdown {
+        z-index: 9999999;
+        position: fixed;
+        bottom: 21%;
+        left: 10%;
+    }
+    
+    .cartodb-legend {
+        left: 10%;
+        bottom: 8.5%!important;
+        width: 170px;
+        height: auto;
+        background-color: #FFF;
+        font-family: "Helvetica";
+        opacity: .85;
+    }
+    
+    .cartodb-legend ul li {
+        font-weight: 500;
+        line-height: 15px;
+        font-family: "Helvetica";
+        margin-left: 2px!important;
+        font-size: 10px!important;
+    }
+    
+    .cartodb-legend img {
+        margin-left: 0%!important;
+    }
+    
+    div#searchbox {
+        background-color: #d2eaef;
+        opacity: .85;
+        position: absolute;
+        left: 28%;
+        bottom: 9%;
+        width: auto;
+        height: auto;
+        padding: 10px;
+        display: block;
+        z-index: 9000;
+    }
+    
+    div#searchbox input {
+        width: 150px;
+    }
+    
+    div#results {
+        background: #FFF;
+    }
+    
+    .title {
+        position: absolute;
+        opacity: .85;
+        left: 10%;
+        bottom: 22%;
+        z-index: 9999;
+        color: white;
+        font-family: "Helvetica";
+    }
+    
+    .subtitle {
+        width: 42.5%;
+        opacity: .9;
+        font-weight: 300;
+        line-height: 23px;
+    }
+    
+    .legendtext {
+        width: 100%;
+        opacity: 1;
+        font-weight: 500;
+        line-height: 15px;
+        font-family: "Helvetica";
+    }
+    
+    .ui-autocomplete-loading {
+        background: white url('images/ui-anim_basic_16x16.gif') right center no-repeat;
+    }
+    
+    ul.circle {
+        list-style-image: url("images/circle.jpg");
+    }
+    </style>
+    <link rel="stylesheet" href="css/cartodb.css" />
+</head>
+
+<body>
+    <!-- 
+         <div class='cartodb-legend category'>
+            <ul>
+                <img src="images/legend_final.jpg" height="77px" width="100%" align="left"></img>
+            </ul>
+         </div> -->
+    <div class='cartodb-legend category'>
+        <div class="legend-title" style="color:#284a59">Zoom, scroll and hover</div>
+        <ul class="circle">
+            <li>
+                <div class="bullet" style="background-color:#F84F40"></div>Critically eroded beach</li>
+            <li>
+                <div class="bullet" style="background-color:#FFFFFF"></div>Building permit</li>
+        </ul>
+    </div>
+    <div class="title">
+        <h1>Coastal Permits</h1>
+        <h4 class="subtitle">These are the construction permits built on critically eroded beaches in Estero Bay &mdash; a snapshot of the tens of thousands issued all over the state. Type your county in the search bar to find the ones in your neighborhood. </h4>
+    </div>
+    <div id="dropdown">
+        <select data-placeholder="Choose a County..." class="chosen-select" style="width:350px;" tabindex="2">
+            <option value=""></option>
+            <option value="Bay">Bay</option>
+            <option value="Brevard">Brevard</option>
+            <option value="Broward">Broward</option>
+            <option value="Charlotte">Charlotte</option>
+            <option value="Collier">Collier</option>
+            <option value="Dade">Dade</option>
+            <option value="Duval">Duval</option>
+            <option value="Escambia">Escambia</option>
+            <option value="Flagler">Flagler</option>
+            <option value="Franklin">Franklin</option>
+            <option value="Gulf">Gulf</option>
+            <option value="Hillsborough">Hillsborough</option>
+            <option value="Indian River">Indian River</option>
+            <option value="Lee">Lee</option>
+            <option value="Levy">Levy</option>
+            <option value="Manatee">Manatee</option>
+            <option value="Martin">Martin</option>
+            <option value="Nassau">Nassau</option>
+            <option value="Navarre">Navarre</option>
+            <option value="Okaloosa">Okaloosa</option>
+            <option value="Palm Beach">Palm Beach</option>
+            <option value="Pasco">Pasco</option>
+            <option value="Pinellas">Pinellas</option>
+            <option value="Sarasota">Sarasota</option>
+            <option value="St. Johns">St. Johns</option>
+            <option value="St. Lucie">St. Lucie</option>
+            <option value="Volusia">Volusia</option>
+            <option value="Wakulla">Wakulla</option>
+            <option value="Walton">Walton</option>
+        </select>
+    </div>
+    <div id="map"></div>
+    <!-- <div id="searchbox">
+        <input type="text" name="ad" value="" id="ad" size="10" />
+        <button type="button" id="searchButton">Search County</button>
+    </div> -->
+    <script src="js/cartodb.js"></script>
+    <script src="js/jquery-3.1.1.min.js"></script>
+    <script src="js/chosen.jquery.js" type="text/javascript"></script>
+    <script>
+    var layer;
+    var input;
+    var map;
+
+
+    function main() {
+
+        $('.chosen-select').chosen({
+            width: '200px'
+        })
+        
+
+        var map = L.map('map', {
+            zoomControl: true,
+            center: [26.4389358290448, -81.9354701916718],
+            zoom: 15
+        });
+
+        L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+        }).addTo(map);
+
+        cartodb.createLayer(map, 'https://bmm80.carto.com/api/v2/viz/1b9d92fc-7d6e-4d2d-818b-3682b431a9a3/viz.json').addTo(map)
+            .done(function() {
+                $('.chosen-select').chosen()
+            .change(function() {
+                var selectedCounty = $('.chosen-select').val();
+                console.log(selectedCounty)
+       
+
+                    
+                    var sql = new cartodb.SQL({
+                        user: 'bmm80'
+                    });
+
+
+
+                    sql.getBounds("SELECT * FROM beaches_sept_buffer where county ILIKE '" + selectedCounty +
+                        "'").done(function(bounds) {
+                        $(".title").fadeTo('slow', 0);
+                        map.fitBounds(bounds)
+                    });
+
+                         })
+
+
+
+
+
+                });
+
+    }
+
+    function titleCase(str) {
+        var newstr = str.split(" ");
+        for (i = 0; i < newstr.length; i++) {
+            if (newstr[i] == "") continue;
+            var copy = newstr[i].substring(1).toLowerCase();
+            newstr[i] = newstr[i][0].toUpperCase() + copy;
+        }
+        newstr = newstr.join(" ");
+        return newstr;
+    }
+
+
+
+    var isClicked = false;
+    var isDragging = false;
+    $('#map').mousedown(function() {
+        isClicked = true;
+    }).mousemove(function() {
+        isDragging = true;
+        if (isClicked == isDragging) {
+            $(".title").fadeTo('slow', 0);
+        }
+    }).dblclick(function() {
+        $(".title").fadeTo('slow', 0);
+    });
+
+
+    window.onload = main;
+    </script>
+</body>
+
+</html>
